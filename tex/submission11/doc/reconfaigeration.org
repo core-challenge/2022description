@@ -1,0 +1,57 @@
+#+TITLE: ReconfAIGERation entering Core Challenge 2022
+#+EMAIL: Nils Froleyks
+#+KEYWORDS: Aiger, Model Checking, SAT, Encoding, BMC
+#+options: num:nil
+
+* Make title :ignore:
+#+LaTeX_header: \usepackage{authblk}
+#+begin_src latex :eval yes
+\author[1]{Emily Yu}
+\author[2]{Armin Biere}
+\affil[1]{Johannes Kepler University, Linz, Austria}
+\affil[2]{Albert Ludwig University, Freiburg, Germany }
+\maketitle
+#+end_src
+* Abstract :ignore:
+#+LaTeX: \begin{abstract}
+ReconfAIGERation encodes the [[https://core-challenge.github.io/2022/#the-independent-set-reconfiguration-isr-problem][Independent Set Reconfiguration problem]] into a circuit in AIGER format. The bad state property encodes that the target independent set is reached, without violating the token jump rule. A witness for the model checking problem is decoded into a reconfiguration sequence.
+#+LaTeX: \end{abstract}
+* Encoding and Solving
+To encode the ISR problem into AIGER (version 1.9 [cite:@Biere-FMV-TR-11-2]) we define a circuit with one latch and two inputs per node. The latches encode if the node is in the current independent set. The inputs are divided into two groups: freed and marked. At each step, exactly one[fn:1] node in the current IS is freed and one not in the current IS marked, thus enforcing the token jump rule. The independent set constraint is easily encoded by combining gates for each edge in the graph.
+
+The tool [[https://github.com/arminbiere/aiger][aigtoaig]] is used to translate the human readable output from the previous step (.aag) into a binary encoded format (.aig).
+
+For the existent-track the Aiger enconding is solved by the model checker ABC [cite:@braytonABCAcademicIndustrialStrength2010]. ABC runs multiple model checking algorithms in parallel. Among them is an implementation of IC3/PDR [cite:@bradleySATBasedModelChecking2011]. It can therefore prove the unsolvability of a problem.
+
+For the shortest-track the model checking problem is solved with the Bounded Model Checker CaMiCaL [cite:@fazekasIncrementalInprocessingSAT2019]. In Bounded Model Checking (BMC) the transition function of a circuit is encoded into a SAT formula and copied a number of times (called makespan).
+The formula is satisfiable exactly if the target IS is reachable in at most makespan-many steps. Since the makespan is incremented step-wise, the first solution found is guaranteed to be the shortest.
+CaMiCaL is highly integrated with the incremental SAT solver CaDiCaL [cite:@biereEnteringSATCompetition2020] to optimize the effectiveness of incremental inprocessing [cite:@fazekasIncrementalInprocessingSAT2019].
+
+For the longest-track we skip the encoding to Aiger and use CaDiCaL directly. In addition to the usual BMC encoding we add a uniqueness constraint to the steps of the solution to disallow loops in the reconfiguration sequence. In theory the makespan is increased until it reaches the maximum possible unique solution length:
+\(N = \binom{\text{number of nodes}}{\text{size IS}}.\)
+The last found solution is then guaranteed to be the longest.
+In practice $N$ exceeds the maximum integer value in most cases and the computation will not terminate in reasonable time or memory.
+* Implementation
+Our solver is written in Nim and can be compiled with:
+#+begin_src sh :exports code
+nim cpp -d:release --passL:cadical/build/libcadical.a reconfaigeration
+#+end_src
+It depends on other executables in the same directory. We cannot provide the source code for all of them.
+
+We generated the log files
+in parallel on 32 nodes of our cluster.
+Each node has access to two 8-core Intel Xeon E5-2620 v4 CPUs running at 2.10 GHz
+(turbo-mode disabled) and 128 GB main memory.
+
+Since ABC spawns multiple processes we only allocated one instance per node. For CaMiCaL we ran 4 instances in parallel on each node. The memory was limited to 32 GB for each of the instances. The timeout was set to 10000 seconds for both.
+For the longest-track we used the same number of instances and memory limit and a timeout of 5000 seconds.
+* Literature :ignore:
+#+LaTeX_header: \usepackage{biblatex}
+#+LaTeX_header: \addbibresource{literature.bib}
+#+LaTeX: \printbibliography
+** literature.bib :noexport:
+#+begin_src org :tangle literature.bib
+<<get-citations()>>
+#+end_src
+* Footnotes
+[fn:1] To encode the at-most-one part we used the product encoding [cite:@chenNewSATEncoding2010] since a naive square encoding runs out of memory before the encoding is completed on some of the instances.

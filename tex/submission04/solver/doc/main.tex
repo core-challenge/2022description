@@ -1,0 +1,187 @@
+
+% Intended LaTeX compiler: pdflatex
+\documentclass{article}
+
+\usepackage{amsmath}
+\usepackage{authblk}
+\usepackage{graphicx}
+\usepackage[hidelinks]{hyperref}
+\usepackage{natbib}
+\usepackage{tikz}
+\usetikzlibrary{shapes}
+
+\usepackage{todonotes}
+\presetkeys{todonotes}{inline}{}
+
+\date{}
+% \title{Core Challenge 2022: Solver Tracks Documentation}
+\title{(PARIS) Planning Algorithms for \\ Reconfiguring Independent Sets}
+\pagenumbering{gobble}
+
+\author[1]{Remo Christen}
+\author[1]{Salomé Eriksson}
+\author[2]{Michael Katz}
+\author[3]{Emil Keyder}
+\author[4]{Christian Muise}
+\author[4]{Alice Petrov}
+\author[1]{Florian Pommerening}
+\author[5]{\\ Jendrik Seipp}
+\author[1]{Silvan Sievers}
+\author[6]{David Speck}
+
+\affil[1]{University of Basel}
+\affil[2]{IBM T.J. Watson Research Center}
+\affil[3]{Invitae}
+\affil[4]{Queen's University}
+\affil[5]{Linköping University}
+\affil[6]{University of Freiburg}
+
+\newcommand{\astar}{\ensuremath{\text{A}^*}}
+\renewcommand{\cite}[1]{\citep{#1}}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+The general approach to all of the solver tracks was to model the ISR problem as one of automated planning, and use a selection of state-of-the-art solvers to solve these instances. Throughout this document, we describe the encoding, solvers, and overall search setup.
+
+\section{Planning Encoding}
+
+There are two main encodings we considered -- \textit{single} and \textit{split}. The former uses a single action to move a token from one location to another, while the latter uses two actions -- one to pick up a token and another to place it. While the full details on the Planning Domain Definition Language (PDDL) is out of scope for this document, the snippets presented here are fairly self-explanatory. More details on the PDDL standard can be found in \cite{pddlbook}.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.55\textwidth]{figures/move-single}
+    \caption{PDDL example of a single action move.}
+    \label{fig:move-single}
+\end{figure}
+
+Figure \ref{fig:move-single} shows the PDDL code for a single action move, with comments interleaved. Rather than define the actions in a lifted manner, we found that generating the ground actions (along with the conditions necessary to retain the independent set) was the most effective.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.45\textwidth]{figures/move-split-pick}
+  \hfill
+  \includegraphics[width=0.45\textwidth]{figures/move-split-place}
+  \caption{PDDL example of a pair of split actions for moving a token.}
+  \label{fig:move-split}
+\end{figure}
+
+Figure \ref{fig:move-split} shows the pair of actions for the split encoding. Ultimately, we found this encoding to be the most effective, and so was used for all tracks and solvers.
+
+Finally, the planning systems we used are all built on a common software framework which first parses and preprocesses the PDDL into an intermediate form known as SAS+ \cite{backstrom-nebel-compint1995}. To save on this computational effort, we instead directly encoded the input problem instances for the ISR contest into the SAS+ format. While in general this may lead to a degradation in performance (some planning problems benefit greatly from the preprocessing), in the ISR setting it was far more effective to skip this initial phase of planner technology.
+
+\section{Engine: Core Solver or Algorithm}
+
+
+We use sequential algorithm portfolios for each of the three solver tracks. That
+is, we run a sequence of algorithms, each with an associated time limit. The
+next section describes the algorithms that we use in our sequential portfolios.
+
+\subsection{Our algorithms}
+
+\paragraph{$\astar$+Landmarks} We run an $\astar$ search
+\cite{hart-et-al-ieeessc1968} with a \emph{landmark count} heuristic
+\cite{karpas-domshlak-ijcai2009} that uses two different kinds of landmarks:
+$h^1$ landmarks \cite{keyder-et-al-ecai2010} and RHW landmarks
+\cite{richter-et-al-aaai2008}. The landmark costs are combined with
+\emph{uniform cost partitioning} \cite{katz-domshlak-icaps2008b}.
+
+\paragraph{GBFS+Landmarks} We run a greedy best-first search (GBFS)
+\cite{doran-michie-rsl1966} with a \emph{landmark count} heuristic
+\cite{keyder-et-al-ecai2010} that computes all landmarks of the
+\emph{delete-relaxed} task \cite{bonet-geffner-aij2001} ($h^1$ landmarks). The
+landmark costs are combined with \emph{uniform cost partitioning}
+\cite{katz-domshlak-icaps2008b}.
+
+\paragraph{Symbolic search}
+We run a forward symbolic blind search 
+\cite{torralba-et-al-aij2017,speck-et-al-icaps2020} using Binary Decision 
+Diagrams \cite{bryant-ieeecomp1986} as the underlying data structure. 
+The symbolic planner we use is SymK \cite{speck-et-al-aaai2020}, which uses 
+CUDD \cite{somenzi-cudd2015} as its decision diagram library. 
+This algorithm is optimal, sound, and complete, i.e., if it reports a plan, 
+this is a shortest plan, if it reports unsolvability, the task is indeed 
+unsolvable, and given sufficient resources, it will eventually find a shortest 
+plan.
+
+\paragraph{Symbolic top-k search}
+We run a modified forward symbolic blind search based on an algorithm 
+called SymK-LL \cite{vontschammer-et-al-icaps2022}, implemented in the symbolic 
+planner SymK \cite{speck-et-al-aaai2020}, which iteratively finds and generates 
+all loopless plans of a given task.
+However, we have made the following two major adjustments to solve the problem 
+of finding the longest loopless plan feasible. 
+First, once we find a goal state $s_{\star}$ reachable with a certain cost $c$, 
+we reconstruct only one loopless plan with cost $c$ and ignore all other plans 
+leading to $s_{\star}$ or any other goal state reachable with $c$. 
+Second, since the split encoding introduced intermediate states in which a token 
+is picked up, we ignore these artificial states when evaluating whether a plan 
+is loopless during the plan reconstruction of SymK-LL.
+This algorithm has the interesting property that it iteratively finds longer 
+plans, starting with the shortest one, and eventually finds the longest loopless 
+plan if enough resources are available.
+
+\paragraph{Numeric abstraction} We abstract the problem to a numeric planning problem
+and check for unsolvability in the abstraction. Since this algorithm is new, we describe
+it in more detail in Section~\ref{sec:numeric-abstraction}.
+
+We now describe our sequential algorithm portfolios. Our portfolio for the
+\emph{existent} track is identical to the one for the \emph{shortest} track.
+
+\subsection{Portfolio for \emph{shortest} and \emph{existent} tracks}
+
+We list the algorithms and their time limits (the first to find a solution is saved and the rest of the steps ignored):
+
+\begin{enumerate}
+\item Numeric abstraction: 10sec
+\item Symbolic search: 70min
+\item $\astar$+Landmarks: 70min
+\item GBFS+Landmarks: 70min
+\item Numeric abstraction: 14hr
+\end{enumerate}
+
+\subsection{Single best solver for \emph{shortest} and \emph{existent} tracks}
+
+The following single solver was used as a single-solver submission. It had the best coverage among all solvers in the portfolio.
+
+\begin{itemize}
+    \item GBFS+Landmarks: 70min
+\end{itemize}
+
+\subsection{Portfolio for \emph{longest} track}
+
+We list the algorithms and their time limits:
+
+\begin{enumerate}
+\item GBFS+Landmarks: 330 seconds
+\item Symbolic top-k search: 70min
+\end{enumerate}
+
+As a fall-back, if neither of the above approaches produced a solution longer than the shortest/existent track, we used the solution to the shortest/existent track as a default.
+
+\subsection{Single best solver for \emph{longest} track}
+
+The following single solver was used as a single-solver submission. It had the best coverage among all solvers in the portfolio. Note that we did not use the "fallback" option for this single track submission.
+
+\begin{itemize}
+    \item Symbolic top-k search: 70min
+\end{itemize}
+
+\input{numeric-abstraction}
+
+\section{Computation Environment}
+
+All evaluations were conducted on a single machine running Ubuntu 20.04 (evaluations done through the Docker image for the submission), with the following specs:
+\begin{itemize}
+\item \textbf{CPU}: Intel(R) Xeon(R) Gold 5218 CPU @ 2.30GHz
+\item \textbf{Cores}: 16
+\item \textbf{MEM}: 128Gb
+\end{itemize}
+
+
+
+\bibliographystyle{abbrvnat}
+\bibliography{abbrv-short,literatur,crossref-short,local}
+
+\end{document}
