@@ -1,0 +1,12 @@
+\contentsline {section}{\ignorespaces Finding Shortest Reconfigurations Sequences of Independent Sets}{3}{section.1}%
+\contentsline {section}{(PARIS) Planning Algorithms for Reconfiguring Independent Sets}{15}{section.2}%
+\contentsline {section}{\ignorespaces Greedy BMC Solver for the Independent Set Reconfiguration Problem}{23}{section.3}%
+\contentsline {section}{\ignorespaces ISR Solver Track Documentation}{25}{section.4}%
+\contentsline {section}{\ignorespaces \textit{recongo}: ASP-based Combinatorial Reconfiguration Problem Solver}{26}{section.5}%
+\contentsline {section}{\ignorespaces ReconfAIGERation entering Core Challenge 2022}{27}{section.6}%
+\contentsline {section}{\ignorespaces A decision diagram-based solver for the independent set reconfiguration problem}{30}{section.7}%
+\contentsline {section}{\ignorespaces Graph track description}{31}{section.8}%
+\contentsline {section}{\ignorespaces Every Reconfiguration Starts with a First Step}{34}{section.9}%
+\contentsline {section}{\ignorespaces A Series of Graphs With Exponentially Growing Reconfigurations Sequences of Independent Sets}{37}{section.10}%
+\contentsline {section}{\ignorespaces Every House on the Block: A generalized solution to creating ISR instances of large plan length}{44}{section.11}%
+\contentsline {section}{\ignorespaces The Documentation of Graph Track in Core Challenge}{49}{section.12}%
