@@ -1,12 +1,14 @@
-\documentclass[dvipdfmx,autodetect-engine]{jsarticle}
+\documentclass[dvipdfmx,autodetect-engine]{article}
 \usepackage{amsmath}
 \usepackage{listings}
-\usepackage[dviout]{graphicx}
+\usepackage[dvipdfmx]{graphicx}
 \usepackage{ascmac}
 
 \usepackage{authblk}
 \usepackage[utf8]{inputenc}
 \renewcommand{\figurename}{Fig.}
+
+\pagestyle{empty}
 
 \title{The Documentation of Graph Track in Core Challenge}
 
@@ -17,6 +19,8 @@
 
 \begin{document}
 \maketitle
+\thispagestyle{empty}
+
 \section{Graph Structure}
 Consider a piece consisting of $5$ vertices and $2$ tokens (Fig. 1).
 This piece can switch between 0-state and 1-state via transition-state as shown in Figure 2.\\

@@ -1,3 +1,5 @@
+% !BIB TS-program = biber
+% !BIB program = biber
 % Created 2022-03-31 Do 21:32
 % Intended LaTeX compiler: pdflatex
 \documentclass[11pt]{article}
@@ -19,6 +21,7 @@
 \author{Nils Froleyks}
 \date{\today}
 \title{ReconfAIGERation entering Core Challenge 2022}
+\pagestyle{empty}
 \hypersetup{
  pdfauthor={Nils Froleyks},
  pdftitle={ReconfAIGERation entering Core Challenge 2022},
@@ -28,7 +31,7 @@
  pdflang={English}}
 \begin{document}
 
-
+\thispagestyle{empty}
 \author[1]{Emily Yu}
 \author[2]{Armin Biere}
 \affil[1]{Johannes Kepler University, Linz, Austria}
@@ -38,6 +41,8 @@
 \begin{abstract}
 ReconfAIGERation encodes the \href{https://core-challenge.github.io/2022/\#the-independent-set-reconfiguration-isr-problem}{Independent Set Reconfiguration problem} into a circuit in AIGER format. The bad state property encodes that the target independent set is reached, without violating the token jump rule. A witness for the model checking problem is decoded into a reconfiguration sequence.
 \end{abstract}
+
+\thispagestyle{empty}
 \section*{Encoding and Solving}
 \label{sec:org71e5b64}
 To encode the ISR problem into AIGER (version 1.9 \autocite{Biere-FMV-TR-11-2}) we define a circuit with one latch and two inputs per node. The latches encode if the node is in the current independent set. The inputs are divided into two groups: freed and marked. At each step, exactly one\footnote{To encode the at-most-one part we used the product encoding \autocite{chenNewSATEncoding2010} since a naive square encoding runs out of memory before the encoding is completed on some of the instances.} node in the current IS is freed and one not in the current IS marked, thus enforcing the token jump rule. The independent set constraint is easily encoded by combining gates for each edge in the graph.
@@ -50,11 +55,13 @@ For the shortest-track the model checking problem is solved with the Bounded Mod
 The formula is satisfiable exactly if the target IS is reachable in at most makespan-many steps. Since the makespan is incremented step-wise, the first solution found is guaranteed to be the shortest.
 CaMiCaL is highly integrated with the incremental SAT solver CaDiCaL \autocite{biereEnteringSATCompetition2020} to optimize the effectiveness of incremental inprocessing \autocite{fazekasIncrementalInprocessingSAT2019}.
 
+\thispagestyle{empty}
 For the longest-track we skip the encoding to Aiger and use CaDiCaL directly. In addition to the usual BMC encoding we add a uniqueness constraint to the steps of the solution to disallow loops in the reconfiguration sequence. In theory the makespan is increased until it reaches the maximum possible unique solution length:
 \(N = \binom{\text{number of nodes}}{\text{size IS}}.\)
 The last found solution is then guaranteed to be the longest.
 In practice \(N\) exceeds the maximum integer value in most cases and the computation will not terminate in reasonable time or memory.
 \section*{Implementation}
+\thispagestyle{empty}
 \label{sec:orgaf79f39}
 Our solver is written in Nim and can be compiled with:
 \begin{verbatim}
